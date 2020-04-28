@@ -2,6 +2,8 @@ import pandas as pd
 import sys
 from tkinter import *
 import webbrowser
+import os, sys
+
 
 class MainGui(Frame):
     def __init__(self, parent):
@@ -65,9 +67,8 @@ def findURL(string):
     return re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', string)
 
 def main():
-    fileName = "F:\Downloads\LinkViewer\Testcsv.csv"
+    fileName = "Testcsv.csv"
     datas = pd.read_csv(fileName, delimiter=";")
-
     mainWindow = Tk()
     app = MainGui(mainWindow)
     app.initLists(datas["Eleve"])
