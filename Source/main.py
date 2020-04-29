@@ -1,81 +1,64 @@
 import pandas as pd
-import sys
-from tkinter import *
-import webbrowser
-import os, sys
-
-
-class MainGui(Frame):
-    def __init__(self, parent):
-        Frame.__init__(self, parent)
-        self.parent = parent
-        self.initUi()
-
-    def initUi(self):
-        self.parent.title("list of students and links")
-        self.pack(fill=BOTH, expand=True)
-        scrollbarStudent = Scrollbar(self)
-
-        self.students = Listbox(self, yscrollcommand=scrollbarStudent.set)
-        scrollbarStudent.pack(side=LEFT, fill=Y)
-        self.students.pack(side=LEFT, expand=True, fill=BOTH)
-
-        scrollbarLinks = Scrollbar(self)
-
-        self.links = Listbox(self, yscrollcommand=scrollbarLinks.set)
-        scrollbarLinks.pack(side=RIGHT, fill=Y)
-        self.links.pack(side=RIGHT, expand=True, fill=BOTH)
-
-
-
-    def initLists(self, students):
-        for student in students:
-            self.students.insert(END, student)
-
-
-def onSelectStudent(event, datas, links):
-    try:
-        w = event.widget
-        index = int(w.curselection()[0])
-        value = w.get(index)
-        # print(index, value)
-        links.delete(0, 'end')
-        compt = 0
-        for link in datas[datas["Eleve"] == value].values[0]:
-            if compt == 0:
-                pass
-                compt += 1
-            else:
-                links.insert(END, "lien vers prépa "+ str(compt) + " : "+ link)
-    except IndexError:
-        pass
-
-
-def onSelectLink(event):
-    try:
-        w = event.widget
-        index = int(w.curselection()[0])
-        value = w.get(index)
-        #print(index, value)
-        webbrowser.open(findURL(value)[0])
-    except IndexError:
-        pass
-
-def findURL(string):
-    # findall() has been used
-    # with valid conditions for urls in string
-    return re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', string)
+import os
+import xlsxwriter
 
 def main():
-    fileName = "Testcsv.csv"
-    datas = pd.read_csv(fileName, delimiter=";")
-    mainWindow = Tk()
-    app = MainGui(mainWindow)
-    app.initLists(datas["Eleve"])
-    app.students.bind('<<ListboxSelect>>', lambda event, datas=datas, links = app.links : onSelectStudent(event, datas, links))
-    app.links.bind('<<ListboxSelect>>', onSelectLink)
-    mainWindow.mainloop()
+    #chemin du csv
+    csvPath = "F:\\Downloads\\LinkViewer\\Source\\Testcsv.csv"
+    #chemin où l'on souhaite créer le dossier parent des dossiers des étudiants
+    folderPath = "F:\\Downloads\\LinkViewer\\"
+    os.chdir(folderPath)
+    #Nom du folder du fichier parent
+    nameOfFolder = "TestFolder"
+    if not os.path.exists(nameOfFolder):
+        os.mkdir(nameOfFolder)
+        #print("Directory ", nameOfFolder, " Created ")
+    else:
+        #print("Directory ", nameOfFolder, " already exists")
+        pass
+    #mise à jour du fichier de travail avec le fichier parent en tant que nouveau cwd
+    folderPath += nameOfFolder+"\\"
+    os.chdir(folderPath)
+    #lecture des données
+    datas = pd.read_csv(csvPath, delimiter=";")
+    # Creation du header du fichier excel
+    header = []
+    for head in datas:
+        header.append(head)
+    #print(header)
+    #creation des dossiers par étudiant, avec le fichier excel
+    for student in datas["Eleve"]:
+        #retour dans le dossier parent par sécurité
+        os.chdir(folderPath)
+        #print(os.getcwd())
+        #creation du dossier etudiant dans le dossier parent
+        if not os.path.exists(student):
+            os.mkdir(student)
+            #print("Directory ", student, " Created ")
+        else:
+            #print("Directory ", student, " already exists")
+            pass
+        #changement du cwd pour se mettre dans le dossier étudiant pour créer et ecrire le excel
+        os.chdir(folderPath+"\\"+student)
+        #print(os.getcwd())
+        #creation du excel et de sa feuille
+        workbook = xlsxwriter.Workbook(student+".xlsx")
+        worksheet = workbook.add_worksheet()
+        #creation des données à écrire
+        datasToWrite = []
+        for head in header:
+            #print([head, datas[datas["Eleve"]==student][head].values[0]])
+            datasToWrite.append([head, datas[datas["Eleve"]==student][head].values[0]])
+        row = 0
+        col = 0
+        #ecriture des données sur excel, et fermeture du fichier (à l'ouverture, on écrase le contenu du fichier précédent
+        for head, value in datasToWrite:
+            #print(head, value)
+            worksheet.write(row, col, head)
+            worksheet.write(row, col+1, value)
+            row += 1
+        workbook.close()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
