@@ -41,7 +41,7 @@ def main():
     #initialiser header prof
     for i in range(len(header)):
         if i == 0:
-            datasExcelRecap[0][i]=header[i]+header[i+1]
+            datasExcelRecap[0][i]=header[i]+" et "+header[i+1]
         elif i == 1:
             pass
         else:
