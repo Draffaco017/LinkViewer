@@ -106,15 +106,12 @@ def main():
     workbook = xlsxwriter.Workbook("RecapProfProduction.xlsx")
     worksheet1 = workbook.add_worksheet("Header == colonne")
     worksheet2 = workbook.add_worksheet("Header == ligne")
-
     for i in range(len([x[0] for x in datasExcelRecap])):
         # parcours des lignes
         for j in range(len(datasExcelRecap[0][:])):
             #parcours des colonnes
             worksheet1.write(i, j, str(datasExcelRecap[i][j])) #header = ligne
             worksheet2.write(j, i, str(datasExcelRecap[i][j])) #hearder == colonne
-
-
     workbook.close()
 
 
