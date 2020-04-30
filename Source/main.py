@@ -30,8 +30,25 @@ def main():
             header.append(head)
             #print(head, "\n")
     #print(header)
-    #creation des dossiers par étudiant, avec le fichier excel
-    datasExcelRecap = []#c'est le tableau qui stockera le excel récapitulatif pour chaque étudiant
+    # newSessionName : pour rajouter un nom "custom" aux séances
+    newSessionName = ['S17premierExos', 'S18SecondExo', 'S19TroisiemeExo', 'S19++Bonus:)']
+    # c'est le tableau récapitulatif prof qui stockera la progression de tout les étudiants
+    datasExcelRecap = []
+    #initialiser la forme
+    for i in range(datas[header[0]].shape[0]+1):
+        datasExcelRecap.append([0]*(len(header)-1))
+    #print(datasExcelRecap)
+    #initialiser header prof
+    for i in range(len(header)):
+        if i == 0:
+            datasExcelRecap[0][i]=header[i]+header[i+1]
+        elif i == 1:
+            pass
+        else:
+            datasExcelRecap[0][i-1] = header[i][0:3]+" "+newSessionName[i-2]
+    #print(datasExcelRecap)
+    # creation des dossiers par étudiant, avec le fichier excel
+    currentRowForRecap = 1
     for studentName in datas[header[0]]:#key = "Nom"
         studentFolderName = studentName+datas.loc[datas[header[0]]==studentName, header[1]].values[0]
         #retour dans le dossier parent par sécurité
@@ -52,18 +69,18 @@ def main():
         worksheet = workbook.add_worksheet()
         #creation des données à écrire
         datasToWrite = []
-        #newSessionName : pour rajouter un nom "custom" aux séances
-        newSessionName = ['S17premierExos', 'S18SecondExo', 'S19TroisiemeExo', 'S19++Bonus:)']
         for i in range(len(header)):
             #print([head, datas[datas["Eleve"]==student][head].values[0]])
             if i == 0:
                 datasToWrite.append([header[i]+" et "+header[i+1], datas.loc[datas[header[0]] == studentName, header[i]].values[0]+" "+datas.loc[datas[header[0]] == studentName, header[i+1]].values[0]])
+                datasExcelRecap[currentRowForRecap][i] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0]+" "+datas.loc[datas[header[0]] == studentName, header[i+1]].values[0])
             elif i == 1:
                 pass
             else:
                 #le header[i][0:3] permet de récupérer le nom de séance (expl : S19+) au début des headers
                 #du coup il vaut mieux ne pas changer le type de typographie dans les futures éditions du GForm (et garder une typographie SXX et le mot "Déposez" dans les headers
                 datasToWrite.append([header[i][0:3]+" "+newSessionName[i-2], datas.loc[datas[header[0]] == studentName, header[i]].values[0]])
+                datasExcelRecap[currentRowForRecap][i-1] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0])
         row = 0
         col = 0
         #ecriture des données sur excel, et fermeture du fichier (à l'ouverture, on écrase le contenu du fichier précédent
@@ -81,6 +98,27 @@ def main():
                 worksheet.write(row, col + 1, str(value))
             row += 1
         workbook.close()
+        currentRowForRecap += 1
+    #écriture du fichier récapitulatif prof
+    os.chdir(folderPath)
+    #print(os.getcwd())
+    #print(datasExcelRecap)
+    workbook = xlsxwriter.Workbook("RecapProfProduction.xlsx")
+    worksheet1 = workbook.add_worksheet("Header == colonne")
+    worksheet2 = workbook.add_worksheet("Header == ligne")
+
+    for i in range(len([x[0] for x in datasExcelRecap])):
+        # parcours des lignes
+        for j in range(len(datasExcelRecap[0][:])):
+            #parcours des colonnes
+            worksheet1.write(i, j, str(datasExcelRecap[i][j])) #header = ligne
+            worksheet2.write(j, i, str(datasExcelRecap[i][j])) #hearder == colonne
+
+
+    workbook.close()
+
+
+
 
 
 if __name__ == "__main__":
