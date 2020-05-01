@@ -1,5 +1,5 @@
 import pandas as pd
-import os
+import os, shutil
 import xlsxwriter
 
 def main():
@@ -61,12 +61,22 @@ def main():
         else:
             #print("Directory ", studentFolderName, " already exists")
             pass
+        #vider tout le dossier avant de faire une autre opération:
+        otherNamerequired = 0
+        for fileName in os.listdir(folderPath + "\\" + studentFolderName):
+            filePath = os.path.join(folderPath + "\\" + studentFolderName, fileName)
+            try:
+                if os.path.isfile(filePath) or os.path.islink(filePath):
+                    os.unlink(filePath)
+                elif os.path.isdir(filePath):
+                    shutil.rmtree(filePath)
+            except Exception as e:
+                count = 0
+                for i in os.listdir(folderPath + "\\" + studentFolderName):
+                    otherNamerequired += 1
         #changement du cwd pour se mettre dans le dossier étudiant pour créer et ecrire le excel
         os.chdir(folderPath+"\\"+studentFolderName)
         #print(os.getcwd())
-        #creation du excel et de sa feuille
-        workbook = xlsxwriter.Workbook(studentFolderName+".xlsx")
-        worksheet = workbook.add_worksheet()
         #creation des données à écrire
         datasToWrite = []
         for i in range(len(header)):
@@ -83,6 +93,13 @@ def main():
                 datasExcelRecap[currentRowForRecap][i-1] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0])
         row = 0
         col = 0
+        # creation du excel et de sa feuille
+        if otherNamerequired == 0:
+            workbook = xlsxwriter.Workbook(studentFolderName + ".xlsx")
+            worksheet = workbook.add_worksheet()
+        else:
+            workbook = xlsxwriter.Workbook(studentFolderName + " V" + str(otherNamerequired) + ".xlsx")
+            worksheet = workbook.add_worksheet()
         #ecriture des données sur excel, et fermeture du fichier (à l'ouverture, on écrase le contenu du fichier précédent
         for head, value in datasToWrite:
             #print(head, value)
@@ -103,7 +120,21 @@ def main():
     os.chdir(folderPath)
     #print(os.getcwd())
     #print(datasExcelRecap)
-    workbook = xlsxwriter.Workbook("RecapProfProduction.xlsx")
+    newNameProfFile = 0
+    for fileName in os.listdir(folderPath):
+        filePath = os.path.join(folderPath, fileName)
+        try:
+            if os.path.isfile(filePath) or os.path.islink(filePath):
+                os.unlink(filePath)
+        except Exception as e:
+            count = 0
+            for i in os.listdir(folderPath + "\\" + studentFolderName):
+                if os.path.isfile(filePath) or os.path.islink(filePath):
+                    newNameProfFile += 1
+    if newNameProfFile ==0:
+        workbook = xlsxwriter.Workbook("RecapProfProduction.xlsx")
+    else:
+        workbook = xlsxwriter.Workbook("RecapProfProductionv"+str(newNameProfFile)+".xlsx")
     worksheet1 = workbook.add_worksheet("Header == colonne")
     worksheet2 = workbook.add_worksheet("Header == ligne")
     for i in range(len([x[0] for x in datasExcelRecap])):
@@ -113,9 +144,6 @@ def main():
             worksheet1.write(i, j, str(datasExcelRecap[i][j])) #header = ligne
             worksheet2.write(j, i, str(datasExcelRecap[i][j])) #hearder == colonne
     workbook.close()
-
-
-
 
 
 if __name__ == "__main__":
