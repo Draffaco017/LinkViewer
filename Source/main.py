@@ -7,6 +7,8 @@ def main():
     csvPath = "F:\\Downloads\\LinkViewer\\Source\\Carnet de l'apprenant3_Diego.csv"
     #chemin où l'on souhaite créer le dossier parent des dossiers des étudiants
     folderPath = "F:\\Downloads\\LinkViewer\\"
+    # newSessionName : pour rajouter un nom "custom" aux séances
+    newSessionName = ['S17premierExos', 'S18SecondExo', 'S19TroisiemeExo', 'S19++ exobonus :)']
     os.chdir(folderPath)
     #Nom du folder du fichier parent
     nameOfFolder = "StudentsFolder"
@@ -26,12 +28,10 @@ def main():
     header = []
     # j'ai trouvé que le mot clé "déposez" était plus robuste pour récupérer le lien drive du fichier
     for head in datas:
-        if "Déposez" in head or "Nom" in head or "Prénom" in head :
+        if "Déposez" in head or "Nom" in head or "Prénom" in head:
             header.append(head)
             #print(head, "\n")
     #print(header)
-    # newSessionName : pour rajouter un nom "custom" aux séances
-    newSessionName = ['S17premierExos', 'S18SecondExo', 'S19TroisiemeExo', 'S19++Bonus:)']
     # c'est le tableau récapitulatif prof qui stockera la progression de tout les étudiants
     datasExcelRecap = []
     #initialiser la forme
@@ -41,16 +41,19 @@ def main():
     #initialiser header prof
     for i in range(len(header)):
         if i == 0:
-            datasExcelRecap[0][i]=header[i]+" et "+header[i+1]
+            datasExcelRecap[0][i] = header[i] + " et " + header[i+1]
         elif i == 1:
             pass
         else:
-            datasExcelRecap[0][i-1] = header[i][0:3]+" "+newSessionName[i-2]
+            if i-2 < len(newSessionName):
+                datasExcelRecap[0][i - 1] = header[i][0:4]+" "+newSessionName[i-2]
+            else:
+                datasExcelRecap[0][i - 1] = header[i][0:4]
     #print(datasExcelRecap)
     # creation des dossiers par étudiant, avec le fichier excel
     currentRowForRecap = 1
     for studentName in datas[header[0]]:#key = "Nom"
-        studentFolderName = studentName+datas.loc[datas[header[0]]==studentName, header[1]].values[0]
+        studentFolderName = studentName+datas.loc[datas[header[0]] == studentName, header[1]].values[0]
         #retour dans le dossier parent par sécurité
         os.chdir(folderPath)
         #print(os.getcwd())
@@ -62,7 +65,7 @@ def main():
             #print("Directory ", studentFolderName, " already exists")
             pass
         #vider tout le dossier avant de faire une autre opération:
-        otherNamerequired = 0
+        otherNameRequired = 0
         for fileName in os.listdir(folderPath + "\\" + studentFolderName):
             filePath = os.path.join(folderPath + "\\" + studentFolderName, fileName)
             try:
@@ -71,9 +74,7 @@ def main():
                 elif os.path.isdir(filePath):
                     shutil.rmtree(filePath)
             except Exception as e:
-                count = 0
-                for i in os.listdir(folderPath + "\\" + studentFolderName):
-                    otherNamerequired += 1
+                otherNameRequired += 1
         #changement du cwd pour se mettre dans le dossier étudiant pour créer et ecrire le excel
         os.chdir(folderPath+"\\"+studentFolderName)
         #print(os.getcwd())
@@ -82,23 +83,27 @@ def main():
         for i in range(len(header)):
             #print([head, datas[datas["Eleve"]==student][head].values[0]])
             if i == 0:
-                datasToWrite.append([header[i]+" et "+header[i+1], datas.loc[datas[header[0]] == studentName, header[i]].values[0]+" "+datas.loc[datas[header[0]] == studentName, header[i+1]].values[0]])
-                datasExcelRecap[currentRowForRecap][i] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0]+" "+datas.loc[datas[header[0]] == studentName, header[i+1]].values[0])
+                datasToWrite.append([header[i] + " et " + header[i+1], datas.loc[datas[header[0]] == studentName, header[i]].values[0] + " " + datas.loc[datas[header[0]] == studentName, header[i+1]].values[0]])
+                datasExcelRecap[currentRowForRecap][i] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0] + " " + datas.loc[datas[header[0]] == studentName, header[i+1]].values[0])
             elif i == 1:
                 pass
             else:
-                #le header[i][0:3] permet de récupérer le nom de séance (expl : S19+) au début des headers
+                #le header[i][0:4] permet de récupérer le nom de séance (expl : S19+) au début des headers
                 #du coup il vaut mieux ne pas changer le type de typographie dans les futures éditions du GForm (et garder une typographie SXX et le mot "Déposez" dans les headers
-                datasToWrite.append([header[i][0:3]+" "+newSessionName[i-2], datas.loc[datas[header[0]] == studentName, header[i]].values[0]])
-                datasExcelRecap[currentRowForRecap][i-1] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0])
+                if i-2 < len(newSessionName):
+                    datasToWrite.append([header[i][0:4]+" "+newSessionName[i-2], datas.loc[datas[header[0]] == studentName, header[i]].values[0]])
+                    datasExcelRecap[currentRowForRecap][i-1] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0])
+                else:
+                    datasToWrite.append([header[i][0:4], datas.loc[datas[header[0]] == studentName, header[i]].values[0]])
+                    datasExcelRecap[currentRowForRecap][i - 1] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0])
         row = 0
         col = 0
         # creation du excel et de sa feuille
-        if otherNamerequired == 0:
+        if otherNameRequired == 0:
             workbook = xlsxwriter.Workbook(studentFolderName + ".xlsx")
             worksheet = workbook.add_worksheet()
         else:
-            workbook = xlsxwriter.Workbook(studentFolderName + " V" + str(otherNamerequired) + ".xlsx")
+            workbook = xlsxwriter.Workbook(studentFolderName + " V" + str(otherNameRequired) + ".xlsx")
             worksheet = workbook.add_worksheet()
         #ecriture des données sur excel, et fermeture du fichier (à l'ouverture, on écrase le contenu du fichier précédent
         for head, value in datasToWrite:
@@ -127,14 +132,11 @@ def main():
             if os.path.isfile(filePath) or os.path.islink(filePath):
                 os.unlink(filePath)
         except Exception as e:
-            count = 0
-            for i in os.listdir(folderPath + "\\" + studentFolderName):
-                if os.path.isfile(filePath) or os.path.islink(filePath):
-                    newNameProfFile += 1
-    if newNameProfFile ==0:
+            newNameProfFile += 1
+    if newNameProfFile == 0:
         workbook = xlsxwriter.Workbook("RecapProfProduction.xlsx")
     else:
-        workbook = xlsxwriter.Workbook("RecapProfProductionv"+str(newNameProfFile)+".xlsx")
+        workbook = xlsxwriter.Workbook("Recap Prof Production V"+str(newNameProfFile)+".xlsx")
     worksheet1 = workbook.add_worksheet("Header == colonne")
     worksheet2 = workbook.add_worksheet("Header == ligne")
     for i in range(len([x[0] for x in datasExcelRecap])):
