@@ -192,9 +192,6 @@ def main():
                 worksheet2.write(rowWorksheet2, 4, str(url))
                 rowWorksheet2 += 1
             currentCourseColumn += 1
-
-
-
     workbook.close()
 
 
