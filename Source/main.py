@@ -117,10 +117,10 @@ def main():
         # creation du excel et de sa feuille
         if otherNameRequired == 0:
             workbook = xlsxwriter.Workbook(studentFolderName + ".xlsx")
-            worksheet = workbook.add_worksheet()
+            worksheetStudent = workbook.add_worksheet()
         else:
             workbook = xlsxwriter.Workbook(studentFolderName + " V" + str(otherNameRequired) + ".xlsx")
-            worksheet = workbook.add_worksheet()
+            worksheetStudent = workbook.add_worksheet()
         #ecriture des données sur excel, et fermeture du fichier (à l'ouverture, on écrase le contenu du fichier précédent
         for head, value in datasToWrite:
             #print(head, value)
@@ -129,12 +129,12 @@ def main():
                 #je ne fais ce split que dans les fichiers étudiants, sinon il y aurait des problèmes de layout dans le fichier récapitulatif...
                 urls = value.split(";")
                 for i in range(len(urls)):
-                    worksheet.write(row, col, head + "V" + str(i+1))
-                    worksheet.write(row, col+1, str(urls[i]))
+                    worksheetStudent.write(row, col, head + "V" + str(i+1))
+                    worksheetStudent.write(row, col+1, str(urls[i]))
                     row += 1
             else:
-                worksheet.write(row, col, head)
-                worksheet.write(row, col + 1, str(value))
+                worksheetStudent.write(row, col, head)
+                worksheetStudent.write(row, col + 1, str(value))
                 row += 1
         workbook.close()
         currentRowForRecap += 1
@@ -172,16 +172,28 @@ def main():
             #     worksheet3.write(j-1, i, str(datasExcelRecap[i][j])) #header == colonne
     rowWorksheet2 = 0
     columnWorksheet2 = 0
-    for line in datasExcelRecap[:]:
-        for column in line:
-            if ";" in str(column):
-                for link in str(column).split(";"):
-                    worksheet2.write(rowWorksheet2, columnWorksheet2)
-            else:
-                worksheet2.write(rowWorksheet2, columnWorksheet2, str(column))
-                columnWorksheet2 += 1
-        columnWorksheet2 = 0
-        rowWorksheet2 += 1
+    #écriture du header
+    for i in range(3):
+        worksheet2.write(rowWorksheet2, i, datasExcelRecap[0][i])
+    worksheet2.write(rowWorksheet2, 3, "Séance")
+    worksheet2.write(rowWorksheet2, 4, "Lien")
+    rowWorksheet2 += 1
+    for student in (datasExcelRecap[1:]):
+        #print(student)
+        currentCourseColumn = 3
+        for urls in student[3:]:
+            #print(urls)
+            for url in str(urls).split(";"):
+                for i in range(3):#ecrire equipe, nom et prenom
+                    worksheet2.write(rowWorksheet2, i, student[i])
+                #ecrire le nom de la séance
+                worksheet2.write(rowWorksheet2, 3, datasExcelRecap[0][currentCourseColumn])
+                #enfin, écrire le lien
+                worksheet2.write(rowWorksheet2, 4, str(url))
+                rowWorksheet2 += 1
+            currentCourseColumn += 1
+
+
 
     workbook.close()
 
