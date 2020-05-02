@@ -24,36 +24,47 @@ def main():
     #lecture des données
     datas = pd.read_csv(csvPath, delimiter=",")
     #print(datas.head())
-    # Creation du header du fichier excel
+    # Creation du header des fichiers excels
     header = []
-    # j'ai trouvé que le mot clé "déposez" était plus robuste pour récupérer le lien drive du fichier
+    # j'ai trouvé que le mot clé "Déposez" était plus robuste pour récupérer le lien drive du fichier
     for head in datas:
-        if "Déposez" in head or "Nom" in head or "Prénom" in head:
+        if "Déposez" in head or "Nom" in head or "Prénom" in head or "N° Equipe" in head:
             header.append(head)
             #print(head, "\n")
     #print(header)
+    # enlever les espaces des noms et prénoms
+    for name in datas[header[1]].values:
+        #print(datas.loc[datas[header[1]] == name, header[1]].values[0])
+        datas.loc[datas[header[1]] == name, header[1]] = name.replace(" ", "")
+        #print(datas.loc[datas[header[1]] == name.replace(" ", ""), header[1]].values[0])
+    for firstName in datas[header[2]].values:
+        #print(datas.loc[datas[header[2]] == firstName, header[2]].values[0])
+        datas.loc[datas[header[2]] == firstName, header[2]] = firstName.replace(" ", "")
+        #print(datas.loc[datas[header[2]] == firstName.replace(" ", ""), header[2]].values[0])
     # c'est le tableau récapitulatif prof qui stockera la progression de tout les étudiants
     datasExcelRecap = []
     #initialiser la forme
     for i in range(datas[header[0]].shape[0]+1):
-        datasExcelRecap.append([0]*(len(header)-1))
+        datasExcelRecap.append([0]*(len(header)))
     #print(datasExcelRecap)
     #initialiser header prof
     for i in range(len(header)):
-        if i == 0:
-            datasExcelRecap[0][i] = header[i] + " et " + header[i+1]
-        elif i == 1:
-            pass
+        if i == 0:#equipe
+            datasExcelRecap[0][i] = header[i]
+        elif i == 1:#nom
+            datasExcelRecap[0][i] = header[i]
+        elif i == 2:#prénom
+            datasExcelRecap[0][i] = header[i]
         else:
-            if i-2 < len(newSessionName):
-                datasExcelRecap[0][i - 1] = header[i][0:4]+" "+newSessionName[i-2]
+            if i-3 < len(newSessionName):
+                datasExcelRecap[0][i] = header[i][0:4]+" "+newSessionName[i-3]
             else:
-                datasExcelRecap[0][i - 1] = header[i][0:4]
+                datasExcelRecap[0][i] = header[i][0:4]
     #print(datasExcelRecap)
     # creation des dossiers par étudiant, avec le fichier excel
     currentRowForRecap = 1
-    for studentName in datas[header[0]]:#key = "Nom"
-        studentFolderName = studentName+datas.loc[datas[header[0]] == studentName, header[1]].values[0]
+    for studentName in datas[header[1]]:#key = "Nom"
+        studentFolderName = studentName+datas.loc[datas[header[1]] == studentName, header[2]].values[0]
         #retour dans le dossier parent par sécurité
         os.chdir(folderPath)
         #print(os.getcwd())
@@ -82,20 +93,25 @@ def main():
         datasToWrite = []
         for i in range(len(header)):
             #print([head, datas[datas["Eleve"]==student][head].values[0]])
-            if i == 0:
-                datasToWrite.append([header[i] + " et " + header[i+1], datas.loc[datas[header[0]] == studentName, header[i]].values[0] + " " + datas.loc[datas[header[0]] == studentName, header[i+1]].values[0]])
-                datasExcelRecap[currentRowForRecap][i] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0] + " " + datas.loc[datas[header[0]] == studentName, header[i+1]].values[0])
-            elif i == 1:
-                pass
+            if i == 0:#equipe pour fichier prof, tout pour le student
+                datasToWrite.append([header[i+1] + ", " + header[i + 2] + " et " + header[i],
+                                     datas.loc[datas[header[1]] == studentName, header[i + 1]].values[0] + " " +
+                                     datas.loc[datas[header[1]] == studentName, header[i + 2]].values[0] + " " +
+                                    "Equipe " + str(datas.loc[datas[header[1]] == studentName, header[i]].values[0])])
+                datasExcelRecap[currentRowForRecap][i] = str(datas.loc[datas[header[1]] == studentName, header[i]].values[0])
+            elif i == 1:#nom pour fichier prof
+                datasExcelRecap[currentRowForRecap][i] = datas.loc[datas[header[1]] == studentName, header[i]].values[0]
+            elif i == 2:#prenom pour fichier prof
+                datasExcelRecap[currentRowForRecap][i] = datas.loc[datas[header[1]] == studentName, header[i]].values[0]
             else:
                 #le header[i][0:4] permet de récupérer le nom de séance (expl : S19+) au début des headers
                 #du coup il vaut mieux ne pas changer le type de typographie dans les futures éditions du GForm (et garder une typographie SXX et le mot "Déposez" dans les headers
-                if i-2 < len(newSessionName):
-                    datasToWrite.append([header[i][0:4]+" "+newSessionName[i-2], datas.loc[datas[header[0]] == studentName, header[i]].values[0]])
-                    datasExcelRecap[currentRowForRecap][i-1] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0])
+                if i-3 < len(newSessionName):
+                    datasToWrite.append([header[i][0:4]+" "+newSessionName[i-3], datas.loc[datas[header[1]] == studentName, header[i]].values[0]])
+                    datasExcelRecap[currentRowForRecap][i] = (datas.loc[datas[header[1]] == studentName, header[i]].values[0])
                 else:
-                    datasToWrite.append([header[i][0:4], datas.loc[datas[header[0]] == studentName, header[i]].values[0]])
-                    datasExcelRecap[currentRowForRecap][i - 1] = (datas.loc[datas[header[0]] == studentName, header[i]].values[0])
+                    datasToWrite.append([header[i][0:4], datas.loc[datas[header[1]] == studentName, header[i]].values[0]])
+                    datasExcelRecap[currentRowForRecap][i] = (datas.loc[datas[header[1]] == studentName, header[i]].values[0])
         row = 0
         col = 0
         # creation du excel et de sa feuille
@@ -112,13 +128,14 @@ def main():
                 #spliter sur plusieurs colonnes si y'a un ";" (plusieurs versions de fichiers)
                 #je ne fais ce split que dans les fichiers étudiants, sinon il y aurait des problèmes de layout dans le fichier récapitulatif...
                 urls = value.split(";")
-                worksheet.write(row, col, head)
                 for i in range(len(urls)):
-                    worksheet.write(row, col+i+1, str(urls[i]))
+                    worksheet.write(row, col, head + "V" + str(i+1))
+                    worksheet.write(row, col+1, str(urls[i]))
+                    row += 1
             else:
                 worksheet.write(row, col, head)
                 worksheet.write(row, col + 1, str(value))
-            row += 1
+                row += 1
         workbook.close()
         currentRowForRecap += 1
     #écriture du fichier récapitulatif prof
@@ -138,13 +155,34 @@ def main():
     else:
         workbook = xlsxwriter.Workbook("Recap Prof Production V"+str(newNameProfFile)+".xlsx")
     worksheet1 = workbook.add_worksheet("Header == colonne")
-    worksheet2 = workbook.add_worksheet("Header == ligne")
+    worksheet2 = workbook.add_worksheet("Header == colonne, ligne split")
+    worksheet3 = workbook.add_worksheet("Header == ligne")
     for i in range(len([x[0] for x in datasExcelRecap])):
         # parcours des lignes
         for j in range(len(datasExcelRecap[0][:])):
             #parcours des colonnes
-            worksheet1.write(i, j, str(datasExcelRecap[i][j])) #header = ligne
-            worksheet2.write(j, i, str(datasExcelRecap[i][j])) #hearder == colonne
+            worksheet1.write(i, j, str(datasExcelRecap[i][j])) #header == ligne
+            worksheet3.write(j, i, str(datasExcelRecap[i][j]))  # header == colonne
+            #décommenter le if else si dessous et commenter la ligne
+            # worksheet3.write(j, i, str(datasExcelRecap[i][j])) #juste au dessus
+            #afin d'eviter dans header == colonne que la première ligne soit le nom de l'équipe
+            # if j == 0:
+            #     pass
+            # else:
+            #     worksheet3.write(j-1, i, str(datasExcelRecap[i][j])) #header == colonne
+    rowWorksheet2 = 0
+    columnWorksheet2 = 0
+    for line in datasExcelRecap[:]:
+        for column in line:
+            if ";" in str(column):
+                for link in str(column).split(";"):
+                    worksheet2.write(rowWorksheet2, columnWorksheet2)
+            else:
+                worksheet2.write(rowWorksheet2, columnWorksheet2, str(column))
+                columnWorksheet2 += 1
+        columnWorksheet2 = 0
+        rowWorksheet2 += 1
+
     workbook.close()
 
 
