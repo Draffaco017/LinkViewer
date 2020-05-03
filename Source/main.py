@@ -3,8 +3,10 @@ import os, shutil
 import xlsxwriter
 
 def main():
+    #nom du csv
+    csvName = "Carnet de l'apprenant3_Diego.csv"
     #chemin du csv
-    csvPath = "F:\\Downloads\\LinkViewer\\Source\\Carnet de l'apprenant3_Diego.csv"
+    csvPath = "F:\\Downloads\\LinkViewer\\Source\\"+csvName
     #chemin où l'on souhaite créer le dossier parent des dossiers des étudiants
     folderPath = "F:\\Downloads\\LinkViewer\\"
     # newSessionName : pour rajouter un nom "custom" aux séances
@@ -61,6 +63,8 @@ def main():
             else:
                 datasExcelRecap[0][i] = header[i][0:4]
     #print(datasExcelRecap)
+    #récupération de la date:
+    dateExtract = csvName.split("_")[1][:-4]
     # creation des dossiers par étudiant, avec le fichier excel
     currentRowForRecap = 1
     for studentName in datas[header[1]]:#key = "Nom"
@@ -116,11 +120,11 @@ def main():
         col = 0
         # creation du excel et de sa feuille
         if otherNameRequired == 0:
-            workbook = xlsxwriter.Workbook(studentFolderName + ".xlsx")
-            worksheetStudent = workbook.add_worksheet()
+            workbookStudent = xlsxwriter.Workbook(studentFolderName + ".xlsx")
+            worksheetStudent = workbookStudent.add_worksheet()
         else:
-            workbook = xlsxwriter.Workbook(studentFolderName + " V" + str(otherNameRequired) + ".xlsx")
-            worksheetStudent = workbook.add_worksheet()
+            workbookStudent = xlsxwriter.Workbook(studentFolderName + " V" + str(otherNameRequired) + ".xlsx")
+            worksheetStudent = workbookStudent.add_worksheet()
         #ecriture des données sur excel, et fermeture du fichier (à l'ouverture, on écrase le contenu du fichier précédent
         for head, value in datasToWrite:
             #print(head, value)
@@ -136,7 +140,9 @@ def main():
                 worksheetStudent.write(row, col, head)
                 worksheetStudent.write(row, col + 1, str(value))
                 row += 1
-        workbook.close()
+        worksheetStudent.write(row, 0, "DateExtract")
+        worksheetStudent.write(row, 1, str(dateExtract))
+        workbookStudent.close()
         currentRowForRecap += 1
     #écriture du fichier récapitulatif prof
     os.chdir(folderPath)
